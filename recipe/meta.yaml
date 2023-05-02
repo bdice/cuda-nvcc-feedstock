@@ -7,6 +7,7 @@
   "linux-aarch64": "sbsa-linux",
   "linux-ppc64le": "ppc64le-linux",
 } %}
+{% set target_dir = ctk_targets[target_platform] %}
 
 package:
   name: {{ name|lower }}
@@ -67,7 +68,7 @@ outputs:
     about:
       home: https://developer.nvidia.com/cuda-toolkit
       license_file:
-        - {{ PREFIX }}/targets/{{ ctk_targets[target_platform] }}/LICENSE
+        - {{ PREFIX }}/targets/{{ target_dir }}/LICENSE
       license: LicenseRef-NVIDIA-End-User-License-Agreement
       license_url: https://docs.nvidia.com/cuda/eula/index.html
       summary: Compiler for CUDA applications.
@@ -105,9 +106,18 @@ outputs:
         - {{ pin_subpackage("cuda-nvcc-impl_" + cross_target_platform, exact=True) }}
         {% endif %}
     test:
+      requires:
+        - {{ compiler("c") }}
+        - {{ compiler("cxx") }}
+      files:
+        - test.cu
       commands:
-        - test -f $PREFIX/etc/conda/activate.d/~cuda-nvcc_activate.sh      # [linux]
-        - test -f $PREFIX/etc/conda/deactivate.d/~cuda-nvcc_deactivate.sh  # [linux]
+        - test -f $PREFIX/etc/conda/activate.d/~cuda-nvcc_activate.sh       # [linux]
+        - test -f $PREFIX/etc/conda/deactivate.d/~cuda-nvcc_deactivate.sh   # [linux]
+        {% if cross_target_platform == target_platform %}
+        - $PREFIX/targets/{{ target_dir }}/bin/nvcc --version          # [linux]
+        - $PREFIX/targets/{{ target_dir }}/bin/nvcc --verbose test.cu  # [linux]
+        {% endif %}
     about:
       home: https://developer.nvidia.com/cuda-toolkit
       license_file:
